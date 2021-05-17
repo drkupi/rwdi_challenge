@@ -345,8 +345,310 @@ exact question answered here is given in https://adventofcode.com/2020/day/5
     return final_seat
     
 
+def question_6(customs_questions_file: str):
+    """This function counts and returns the number of customs questions asked.
+The solutions corresponds to the puzzle given at https://adventofcode.com/2020/day/6
 
-    #print(excluded_seats) 
+    Args:
+        customs_questions_file (str): Customs file name
 
-boarding_seq_file_name = './data/boarding_sequences.txt'
-print(question_5_bonus(boarding_seq_file_name))
+    Returns:
+        tuple: distribution and sum of yes answers
+    """
+
+    with open(customs_questions_file, 'r') as f:
+        q_lines = f.readlines() 
+    
+    yes_counts = []
+    yes_answers_all = []
+    yes_answers_group = ''
+    for line in q_lines:
+        if line == '\n':
+            yes_answers_all.append(set(yes_answers_group))
+            yes_counts.append(len(set(yes_answers_group)))
+            yes_answers_group = ''
+        else:
+            yes_answers_group = yes_answers_group + line.strip()
+
+    yes_answers_all.append(set(yes_answers_group))
+    yes_counts.append(len(set(yes_answers_group)))
+
+    return yes_counts, sum(yes_counts)
+
+
+def question_10(adapter_file_name: str):
+    """This function solves Day 10, Part 1 of the code challenge given in
+https://adventofcode.com/2020/day/10. Given a list of adapters we find
+distribution of differences.
+
+    Args:
+        adapter_file_name (str): Name of adapter file
+
+    Returns:
+        int: multiple of 1-diff count and 3-diff count
+    """
+
+    with open(adapter_file_name, 'r') as f:
+        adapter_list = [int(x) for x in f.read().split()]
+
+    sorted_adapters = sorted(adapter_list)
+    sorted_adapters.insert(0,0)
+    sorted_adapters.append(sorted_adapters[-1] + 3)
+    diff_list = [y - x for x, y in zip(sorted_adapters, sorted_adapters[1:])]
+    diff_distribution = {x:diff_list.count(x) for x in set(diff_list)}
+
+    return diff_distribution[1]*diff_distribution[3]
+
+
+def question_15(starting_numbers: list, end_turn: int):
+    """This function creates a sequence as given in the challenge at
+https://adventofcode.com/2020/day/15 and returns the nth number (end_turn)
+
+    Args:
+        starting_numbers (list): Starting sequence
+        end_turn (int): Ending turn number
+
+    Returns:
+        int: Number in sequence at end_turn (2020)
+    """
+
+    # Note: solved both Part 1 and Part 2 through this code
+    prev_number = starting_numbers[-1]
+    memory_dict = {}
+    i = 1
+    for number in starting_numbers:
+        memory_dict[number] = i
+        i += 1
+    
+    for turn in range(len(starting_numbers)+1, end_turn+1):
+        if prev_number in memory_dict.keys():
+            curr_number = (turn - 1) - memory_dict[prev_number]
+        else:
+            curr_number = 0
+        memory_dict[prev_number] = turn - 1
+        prev_number = curr_number
+
+    return curr_number   
+
+
+def question_21(food_allergy_file: str):
+    """Function for finding ingredients that are not associated with allergies.
+Full puzzle related to question described at https://adventofcode.com/2020/day/21
+
+    Args:
+        food_allergy_file (str): Allergies file name
+
+    Returns:
+        int: Count of ingredients in food items that are without allergens (repeat count included)
+    """
+
+
+    # Parse file to store data in dictionary
+    with open(food_allergy_file, 'r') as f:
+        lines = [line.rstrip() for line in f]
+
+    food_items = []
+    for line in lines:
+        ingredients = line.split('(')[0].split()
+        allergens = line.split('(')[1].split(')')[0].replace('contains ', '').replace(',', '').split()
+        food_item = {
+            'ingredients': ingredients,
+            'allergens': allergens
+        }
+        food_items.append(food_item)
+
+    allergens = [x['allergens'] for x in food_items]
+    allergens = set([val for sublist in allergens for val in sublist])
+    ingredients =[x['ingredients'] for x in food_items]
+    ingredients = [val for sublist in ingredients for val in sublist]
+    ingredients_freq = {x:ingredients.count(x) for x in set(ingredients)}
+    ingredients = set(ingredients)
+
+    allergen_ingredients = {}
+
+    for allergen in allergens:
+        allergen_ingredients[allergen] = None
+        for item in food_items:
+            if allergen in item['allergens']:
+                if allergen_ingredients[allergen] is None:
+                    allergen_ingredients[allergen] = set(item['ingredients'])
+                else:
+                    allergen_ingredients[allergen] =  set.intersection(allergen_ingredients[allergen], set(item['ingredients']))
+    
+    # Find common ingredients
+    common_ingredients =[list(x) for x in allergen_ingredients.values()]
+    common_ingredients = set([val for sublist in common_ingredients for val in sublist])
+    
+    # Find ingredients without allergens (No error check done)
+    ingredients_without_allergens = ingredients - common_ingredients
+    count_ingredients_without_allergens = 0
+    for item in ingredients_without_allergens:
+        count_ingredients_without_allergens += ingredients_freq[item]
+    
+    return count_ingredients_without_allergens
+
+
+
+def question_18(expression_list_file: str):
+    """This function implements a basic calculator as described at
+https://adventofcode.com/2020/day/18 to compute answers to a list of expressions
+given from a file. Returns the sum of all expressions.
+
+    Args:
+        expression_list_file (str): File with list of expressions
+
+    Returns:
+        int: sum of expression outputs
+    """
+    
+    # Parse expression list file to get all expressions
+    with open(expression_list_file, 'r') as f:
+        expressions = [line.rstrip() for line in f]
+
+    final_sum_val = 0
+    # The following loop evaluates each expression
+    for expression in expressions:
+        value = 0
+        expression = expression.strip()
+        operation = '+'
+        expression_stack = []
+        for i in range(len(expression)):
+            s = expression[i]
+            if s.isdigit():
+                if operation == '+':
+                    value = value + int(s)
+                else:
+                    value = value * int(s)
+            if s == '+' or s == '*':
+                operation = s
+            if s == '(':
+                expression_item = {
+                    'value': value,
+                    'operation': operation
+                }
+                expression_stack.append(expression_item)
+                value = 0
+                operation = '+'
+            if s == ')':
+                if expression_stack[-1]['operation'] == '+':
+                    value = value + expression_stack[-1]['value']
+                else:
+                    value =  value * expression_stack[-1]['value']
+                expression_stack = expression_stack[:-1]
+        final_sum_val += value
+        
+    return final_sum_val
+
+
+def question_13(bus_notes_file: str):
+    """This function computes the bus id and wait time for the puzzle problem
+given at https://adventofcode.com/2020/day/13
+
+    Args:
+        bus_notes_file (str): Bus notes as user input
+
+    Returns:
+        int: wait time * bus id
+    """
+    with open(bus_notes_file, 'r') as f:
+        lines = f.readlines()
+
+    start_time = int(lines[0])
+    bus_ids = lines[1].split(',')
+    bus_ids = [int(x) for x in bus_ids if x != 'x']
+    wait_times = [x - start_time%x for x in bus_ids]
+    wait_times = dict(zip(bus_ids, wait_times))
+    min_bus_id = min(wait_times, key=wait_times.get)
+    min_wait_time = wait_times[min_bus_id]
+    
+    return min_wait_time*min_bus_id
+
+
+def question_25(public_key_card: int, public_key_door: int):
+    """This function computes encryption key of a crypto code given public keys
+keys of two interfaces and further information as provided in https://adventofcode.com/2020/day/25
+
+    Args:
+        public_key_card (int): Public key of card
+        public_key_door (int): Public key of door
+
+    Returns:
+        int: Common encryption code
+    """
+
+    key_value = 1
+    subject_number = 7
+    loop_size_card = 0
+    while key_value != public_key_card:
+        key_value = key_value*subject_number
+        key_value = key_value%20201227
+        loop_size_card += 1
+
+    loop_size_door = 0
+    key_value = 1
+    while key_value != public_key_door:
+        key_value = key_value*subject_number
+        key_value = key_value%20201227
+        loop_size_door += 1
+
+    encryption_key = 1
+    for i in range(loop_size_card):
+        encryption_key  = encryption_key * public_key_door
+        encryption_key  = encryption_key%20201227
+
+    return encryption_key
+
+
+def question_12(nav_instructions_file: str):
+    """Given navigation instructions, this function simulates ship navigation as
+per interpretation rules. The function solves with following question in the
+coding challenge: https://adventofcode.com/2020/day/12
+
+    Args:
+        nav_instructions_file (str): Navigation file
+
+    Returns:
+        int: Manhattan distance from point of origini
+    """
+
+    # Read navigation instructions
+    with open(nav_instructions_file, 'r') as f:
+        lines = f.readlines()
+    
+    horizontal_distance = 0
+    vertical_distance = 0
+    direction = 3 # 0 means North, 3 Means East, 6 means South, 9 means West
+    # Start navigation 
+    for line in lines:
+        line = line.rstrip('\n')
+        if line[0] == 'F':
+            move_step = int(line[1:])
+            if direction == 3:
+                horizontal_distance += move_step
+            elif direction == 6:
+                vertical_distance -= move_step
+            elif direction == 9:
+                horizontal_distance -= move_step
+            else:
+                vertical_distance += move_step
+        elif line[0] == 'N':
+            move_step = int(line[1:])
+            vertical_distance += move_step
+        elif line[0] == 'S':
+            move_step = int(line[1:])
+            vertical_distance -= move_step
+        elif line[0] == 'E':
+            move_step = int(line[1:])
+            horizontal_distance += move_step
+        elif line[0] == 'W':
+            move_step = int(line[1:])
+            horizontal_distance -= move_step
+        elif line[0] == 'R':
+            chg_dir = int(line[1:])/90
+            direction = (direction + 3*chg_dir)%12
+        elif line[0] == 'L':
+            chg_dir = int(line[1:])/90
+            direction = (direction - 3*chg_dir)%12
+    manhattan_dist = abs(horizontal_distance) + abs(vertical_distance)
+    return manhattan_dist
+
