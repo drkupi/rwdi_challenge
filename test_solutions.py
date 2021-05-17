@@ -32,13 +32,13 @@ def test_question_2_bonus():
 
 
 def test_question_4():
-    passport_file_name = './data/passport_data.log'
+    passport_file_name = './data/passport_data.txt'
     true_sol = 200
     assert question_4(passport_file_name) == true_sol
 
 
 def test_question_4_bonus():
-    passport_file_name = './data/passport_data.log'
+    passport_file_name = './data/passport_data.txt'
     true_sol = 116
     assert question_4_bonus(passport_file_name) == true_sol
 
